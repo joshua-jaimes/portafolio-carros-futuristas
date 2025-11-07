@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      rel="stylesheet" />
+    <title>Sistema de Reservas</title>
+  </head>
+
+  <body class="p-3"
+    style=" background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 100vh;">
+
+    <div class="container mt-4 p-4"
+      style="background: rgba(255, 255, 255, 0.8); border-radius: 12px; max-width: 1100px;">
+
+      <h1 style="text-align: center">Sistema de Reservas</h1>
+
+      <div style="justify-self: center" stytle="text-align: center">
+        <button type="button" class="btn btn-success m-3" data-bs-toggle="modal"
+          data-bs-target="#modalMesa">
+          Registrar Mesa
+        </button>
+
+        <div class="modal fade" id="modalMesa" tabindex="-1"
+          aria-labelledby="modalMesaLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalMesaLabel">Registro de
+                  Mesa</h5>
+                <button type="button" class="btn-close"
+                  data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body">
+
+                <div id="alertaMesa" class="alert alert-danger d-none"
+                  role="alert">
+                  ⚠️ Todos los campos son obligatorios.
+                </div>
+
+                <div id="alertaCapacidad" class="alert alert-warning mt-2"
+                  role="alert" style="display:none;">
+                  La capacidad debe ser entre 2 y 20 personas.
+                </div>
+
+                <div id="alertamismonumero" class="alert alert-danger d-none"
+                  role="alert">
+                  ⚠️ Debe ingresar un ID de mesa diferente a los existentes.
+                </div>
+
+                <div id="errorMesa" class="text-danger mb-2"
+                  style="display:none; font-weight:bold;"></div>
+
+                <input type="text" id="idMesa" placeholder="ID Mesa (ej. mesa1)"
+                  class="form-control mb-2" required />
+                <input type="number" id="capacidadMesa"
+                  placeholder="Capacidad (ej. 4)" class="form-control mb-2"
+                  min="2"
+                  max="20" />
+
+                <input type="text" id="ubicacionMesa"
+                  placeholder="Ubicación (ej. Ventana, Jardín)"
+                  class="form-control mb-2" required />
+                <select id="estadoMesa" class="form-control mb-2">
+                  <option value="disponible">Disponible</option>
+                  <option value="ocupada">Ocupada</option>
+                  <option value="deshabilitada">Deshabilitada</option>
+                </select>
+              </div>
+              <div id="alertaMesa" class="alert alert-warning mt-2" role="alert"
+                style="display:none;"></div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                  data-bs-dismiss="modal">
+                  Cerrar
+                </button>
+                <button type="button" class="btn btn-primary"
+                  onclick="validarMesa()">
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary m-3"
+          onclick="window.location.href='reservas.html'">
+          Nueva Reserva
+        </button>
+
+        <div class="container my-4">
+          <h3 class="mb-3" style="text-align: center">Mesas</h3>
+          <div id="planoMesas" class="row g-3"></div>
+        </div>
+      </div>
+
+     
+      <div class="modal fade" id="modalError" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content text-center">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title">Error</h5>
+              <button type="button" class="btn-close"
+                data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p id="mensajeError" class="mb-0"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+
+
+      function inicializarMesas() {
+        if (!localStorage.getItem("mesas")) {
+          const mesas = [
+            {
+              id: "mesa1",
+              capacidad: 2,
+              ubicacion: "Ventana",
+              estado: "disponible",
+            },
+            {
+              id: "mesa2",
+              capacidad: 4,
+              ubicacion: "Jardín",
+              estado: "ocupada",
+            },
+            {
+              id: "mesa3",
+              capacidad: 6,
+              ubicacion: "Centro",
+              estado: "deshabilitada",
+            },
+          ];
+          localStorage.setItem("mesas", JSON.stringify(mesas));
+        }
+      }
+
+ 
+
+
+      function mostrarMesas() {
+        const plano = document.getElementById("planoMesas");
+        plano.innerHTML = "";
+
+        const mesas = JSON.parse(localStorage.getItem("mesas"));
+        mesas.forEach((mesa) => {
+          let color =
+            mesa.estado === "disponible"
+              ? "green"
+              : mesa.estado === "ocupada"
+                ? "blue"
+                : "black";
+          let letra = mesa.estado === "deshabilitada" ? "white" : "black";
+
+          const card = document.createElement("div");
+          card.style.background = color;
+          card.style.color = letra;
+          card.style.margin = "10px";
+          card.style.padding = "15px";
+          card.style.borderRadius = "8px";
+
+          card.innerHTML = `
+  <div class="row align-items-center g-2">
+    <div class="col-md-8 col-12">
+      <h3>${mesa.id}</h3>
+      <p>Capacidad: ${mesa.capacidad}</p>
+      <p>Ubicación: ${mesa.ubicacion}</p>
+      <p>Estado: ${mesa.estado}</p>
+      <div class="mt-2">
+        <button class="btn btn-warning btn-sm" onclick="editarMesa('${mesa.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarMesa('${mesa.id}')">Eliminar</button>
+        <button class="btn btn-primary btn-sm" onclick="reservarMesa('${mesa.id}')">Reservar</button>
+
+
+      </div>
+    </div>
+    <div class="col-md-4 col-12 text-center">
+      <img src="image.jpg" alt="Mesa"
+           class="img-fluid rounded"
+           style="max-height:210px; object-fit:cover;">
+    </div>
+  </div>
+`;
+
+
+
+          plano.appendChild(card);
+        });
+      }
+
+      function crearReserva(datos) {
+        let reservas = JSON.parse(localStorage.getItem("reservas")) || [];
+
+        const nuevaReserva = {
+          idReserva: "reserva" + (reservas.length + 1),
+          nombreCliente: datos.nombre,
+          numeroPersonas: datos.personas,
+          fechaReserva: datos.fecha,
+          horaReserva: datos.hora,
+          ocasionEspecial: datos.ocasion || "Ninguna",
+          notasAdicionales: datos.notas || "",
+          idMesaAsignada: datos.mesa,
+          estado: "Pendiente",
+        };
+
+        reservas.push(nuevaReserva);
+        localStorage.setItem("reservas", JSON.stringify(reservas));
+
+        let mesas = JSON.parse(localStorage.getItem("mesas"));
+        let mesa = mesas.find((m) => m.id === datos.mesa);
+        mesa.estado = "ocupada";
+        localStorage.setItem("mesas", JSON.stringify(mesas));
+
+        mostrarMesas();
+        mostrarReservas();
+      }
+      function guardarMesa() {
+  try {
+    const capInput = document.getElementById("capacidadMesa");
+    if (!capInput.checkValidity()) { capInput.reportValidity(); return; }
+
+    const id = document.getElementById("idMesa").value.trim();
+    const capacidad = document.getElementById("capacidadMesa").value.trim();
+    const ubicacion = document.getElementById("ubicacionMesa").value.trim();
+    const estado = document.getElementById("estadoMesa").value;
+    const alerta = document.getElementById("alertaMesa");
+    const alertaCapacidad = document.getElementById("alertaCapacidad");
+
+    
+    let mesas = JSON.parse(localStorage.getItem("mesas")) || [];
+
+   
+    if (!id || !capacidad || !ubicacion || !estado) {
+      const campoFaltante = !id ? "Número de mesa"
+        : !capacidad ? "Capacidad"
+        : !ubicacion ? "Ubicación"
+        : "Estado";
+      alerta.textContent = `Todos los campos son obligatorios. Falta el campo: ${campoFaltante}.`;
+      alerta.classList.remove("d-none");
+      return;
+    } else {
+      alerta.classList.add("d-none");
+    }
+
+    
+    if (mesas.some(m => (m.id || "").toLowerCase() === id.toLowerCase())) {
+      alerta.textContent = `Ya existe una mesa con el número ${id}.`;
+      alerta.classList.remove("d-none");
+      return;
+    }
+
+    
+    const capNum = parseInt(capacidad, 10);
+    if (isNaN(capNum) || capNum < 2 || capNum > 20) {
+      
+      if (alertaCapacidad) alertaCapacidad.style.display = "block";
+      return;
+    } else if (alertaCapacidad) {
+      alertaCapacidad.style.display = "none";
+    }
+
+    
+    const nuevaMesa = { id, capacidad: capNum, ubicacion, estado };
+    mesas.push(nuevaMesa);
+    localStorage.setItem("mesas", JSON.stringify(mesas));
+
+    mostrarMesas();
+
+    
+    const modalEl = document.getElementById("modalMesa");
+    const modalInst = bootstrap.Modal.getInstance(modalEl);
+    if (modalInst) modalInst.hide();
+
+  
+    document.getElementById("idMesa").value = "";
+    document.getElementById("capacidadMesa").value = "";
+    document.getElementById("ubicacionMesa").value = "";
+    document.getElementById("estadoMesa").value = "disponible";
+    alerta.classList.add("d-none");
+  } catch (e) {
+    console.error("guardarMesa error:", e);
+  }
+}
+
+
+      function guardarReserva() {
+        let reservas = JSON.parse(localStorage.getItem("reservas")) || [];
+
+        let nuevaReserva = {
+          idReserva: "reserva" + (reservas.length + 1),
+          nombreCliente: document.getElementById("nombreCliente").value,
+          numeroPersonas: parseInt(
+            document.getElementById("numeroPersonas").value
+          ),
+          fechaReserva: document.getElementById("fechaReserva").value,
+          horaReserva: document.getElementById("horaReserva").value,
+          idMesaAsignada: document.getElementById("mesaReserva").value,
+          ocasionEspecial: document.getElementById("ocasionEspecial").value,
+          notasAdicionales: document.getElementById("notasAdicionales").value,
+          estado: "Pendiente",
+        };
+
+        if (!nombre || !personas || !fecha || !hora || !mesa) {
+          let alerta = document.getElementById("alertaReserva");
+          alerta.classList.remove("d-none");
+        }
+
+
+
+        reservas.push(nuevaReserva);
+        localStorage.setItem("reservas", JSON.stringify(reservas));
+
+        mostrarReservas();
+      }
+
+      function eliminarMesa(id) {
+        let mesas = JSON.parse(localStorage.getItem("mesas")) || [];
+
+        mesas = mesas.filter(m => m.id !== id);
+        localStorage.setItem("mesas", JSON.stringify(mesas));
+        mostrarMesas();
+      }
+
+
+      function editarMesa(idMesa) {
+        let mesas = JSON.parse(localStorage.getItem("mesas")) || [];
+        let mesa = mesas.find((m) => m.id === idMesa);
+
+        if (!mesa) return;
+
+        document.getElementById("idMesa").value = mesa.id;
+        document.getElementById("capacidadMesa").value = mesa.capacidad;
+        document.getElementById("ubicacionMesa").value = mesa.ubicacion;
+        document.getElementById("estadoMesa").value = mesa.estado;
+
+        const btn = document.querySelector("#modalMesa .btn-primary");
+        btn.textContent = "Actualizar";
+        btn.onclick = function () {
+          mesa.id = document.getElementById("idMesa").value;
+          mesa.capacidad = parseInt(
+            document.getElementById("capacidadMesa").value
+          );
+          mesa.ubicacion = document.getElementById("ubicacionMesa").value;
+          mesa.estado = document.getElementById("estadoMesa").value;
+
+          localStorage.setItem("mesas", JSON.stringify(mesas));
+          mostrarMesas();
+
+          btn.textContent = "Guardar";
+          btn.onclick = guardarMesa;
+          bootstrap.Modal.getInstance(
+            document.getElementById("modalMesa")
+          ).hide();
+        };
+
+        new bootstrap.Modal(document.getElementById("modalMesa")).show();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        inicializarMesas();
+        mostrarMesas();
+      });
+
+
+
+      function reservarMesa(idMesa) {
+  const mesas = JSON.parse(localStorage.getItem("mesas")) || [];
+  const mesa = mesas.find(m => m.id === idMesa);
+
+  if (mesa.estado === "ocupada" || mesa.estado === "deshabilitada") {
+    const modal = new bootstrap.Modal(document.getElementById("modalError"));
+    document.getElementById("mensajeError").textContent = "⚠️ Esta mesa no está disponible para reservas.";
+    modal.show();
+    return;
+  }
+
+  localStorage.setItem("mesaSeleccionada", idMesa);
+  localStorage.setItem("abrirModal", "true");
+  window.location.href = "reservas.html";
+}
+
+
+
+
+
+      document.getElementById("modalMesa").addEventListener("hidden.bs.modal", () => {
+        document.getElementById("idMesa").value = "";
+        document.getElementById("capacidadMesa").value = "";
+        document.getElementById("ubicacionMesa").value = "";
+        document.getElementById("estadoMesa").value = "disponible";
+
+        const btn = document.querySelector("#modalMesa .btn-primary");
+        btn.textContent = "Guardar";
+        btn.onclick = guardarMesa;
+      });
+
+
+
+
+
+      function validarMesa() {
+        const capacidad = parseInt(document.getElementById("capacidadMesa").value);
+
+        if (capacidad < 2 || capacidad > 20) {
+          document.getElementById("alertaCapacidad").style.display = "block";
+          return;
+        } else {
+          document.getElementById("alertaCapacidad").style.display = "none";
+          guardarMesa()
+        }
+      }
+
+
+     function abrirModalReserva(idMesa) {
+  const mesas = JSON.parse(localStorage.getItem("mesas")) || [];
+  const mesa = mesas.find(m => m.id === idMesa);
+
+  if (mesa.estado === "ocupada" || mesa.estado === "deshabilitada") {
+    const modal = new bootstrap.Modal(document.getElementById("modalError"));
+    document.getElementById("mensajeError").textContent = "⚠️ Esta mesa no está disponible para reservas.";
+    modal.show();
+    return;
+  }
+
+  const select = document.getElementById("mesaReserva");
+  select.innerHTML = `<option value="${idMesa}">${idMesa}</option>`;
+  select.value = idMesa;
+  new bootstrap.Modal(document.getElementById("modalReserva")).show();
+}
+
+
+
+
+
+
+
+
+    </script>
+
+      <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+    </body>
+
+  </html>
